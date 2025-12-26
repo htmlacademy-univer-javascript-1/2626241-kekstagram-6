@@ -1,67 +1,102 @@
-import { photos } from './thumbnail.js';
 import { renderThumbnails } from './thumbnail.js';
 
 const filtersContainer = document.querySelector('.img-filters');
-const filtersForm = document.querySelector('.img-filters__form');
-const filterButtons = filtersForm.querySelectorAll('.img-filters__button');
-
-const FilterType = {
-  DEFAULT: 'filter-default',
-  RANDOM: 'filter-random',
-  DISCUSSED: 'filter-discussed'
+const filterButtons = {
+  default: document.querySelector('#filter-default'),
+  random: document.querySelector('#filter-random'),
+  discussed: document.querySelector('#filter-discussed')
 };
 
-// Функции фильтрации
-const filterDefault = () => photos;
+let currentFilter = 'default';
+let photos = [];
+let applyFilterTimeout = null;
 
-const filterRandom = () => {
-  const shuffled = [...photos].sort(() => Math.random() - 0.5);
+const getDefaultPhotos = () => [...photos];
+
+const getRandomPhotos = () => {
+  const shuffled = [...photos].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, 10);
 };
 
-const filterDiscussed = () => [...photos].sort((a, b) => b.comments.length - a.comments.length);
+const getDiscussedPhotos = () => [...photos].sort((a, b) => b.comments.length - a.comments.length);
 
-const filterFunctions = {
-  [FilterType.DEFAULT]: filterDefault,
-  [FilterType.RANDOM]: filterRandom,
-  [FilterType.DISCUSSED]: filterDiscussed
+const setActiveButton = (filterName) => {
+  Object.values(filterButtons).forEach((button) => {
+    if (button) {
+      button.classList.remove('img-filters__button--active');
+    }
+  });
+
+  if (filterButtons[filterName]) {
+    filterButtons[filterName].classList.add('img-filters__button--active');
+  }
+
+  currentFilter = filterName;
 };
 
-// Устранение дребезга
-const debounce = (callback, timeoutDelay = 500) => {
-  let timeoutId;
-  return (...rest) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => callback.apply(this, rest), timeoutDelay);
-  };
-};
-
-// Обработчик изменения фильтра
-const onFilterChange = (evt) => {
-  if (!evt.target.classList.contains('img-filters__button')) {
+const applyFilter = () => {
+  if (!photos.length) {
     return;
   }
 
-  // Убираем активный класс у всех кнопок
-  filterButtons.forEach((button) => {
-    button.classList.remove('img-filters__button--active');
-  });
+  let filteredPhotos;
+  switch (currentFilter) {
+    case 'random':
+      filteredPhotos = getRandomPhotos();
+      break;
+    case 'discussed':
+      filteredPhotos = getDiscussedPhotos();
+      break;
+    default:
+      filteredPhotos = getDefaultPhotos();
+  }
 
-  // Добавляем активный класс текущей кнопке
-  evt.target.classList.add('img-filters__button--active');
+  if (applyFilterTimeout) {
+    clearTimeout(applyFilterTimeout);
+  }
 
-  const filterType = evt.target.id;
-  const filteredPhotos = filterFunctions[filterType]();
-  renderThumbnails(filteredPhotos);
+  applyFilterTimeout = setTimeout(() => {
+    renderThumbnails(filteredPhotos);
+  }, 500);
 };
 
-// Инициализация фильтров
-const initFilters = () => {
-  // Показываем блок фильтров
+const onDefaultClick = (evt) => {
+  evt.preventDefault();
+  setActiveButton('default');
+  applyFilter();
+};
+
+const onRandomClick = (evt) => {
+  evt.preventDefault();
+  setActiveButton('random');
+  applyFilter();
+};
+
+const onDiscussedClick = (evt) => {
+  evt.preventDefault();
+  setActiveButton('discussed');
+  applyFilter();
+};
+
+const initFilters = (loadedPhotos) => {
+  if (loadedPhotos && loadedPhotos.length) {
+    photos = loadedPhotos;
+  }
+
   filtersContainer.classList.remove('img-filters--inactive');
 
-  // Добавляем обработчик с устранением дребезга
-  filtersForm.addEventListener('click', debounce(onFilterChange));
+  if (filterButtons.default) {
+    filterButtons.default.addEventListener('click', onDefaultClick);
+    filterButtons.default.classList.add('img-filters__button--active');
+  }
+
+  if (filterButtons.random) {
+    filterButtons.random.addEventListener('click', onRandomClick);
+  }
+
+  if (filterButtons.discussed) {
+    filterButtons.discussed.addEventListener('click', onDiscussedClick);
+  }
 };
 
-export { initFilters };
+export { initFilters, setActiveButton };

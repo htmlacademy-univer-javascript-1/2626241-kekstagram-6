@@ -1,26 +1,11 @@
-import noUiSlider from '/vendor/nouislider/nouislider.mjs';
-
 const SCALE_STEP = 25;
 const SCALE_MIN = 25;
 const SCALE_MAX = 100;
 const SCALE_DEFAULT = 100;
 
-const uploadForm = document.querySelector('.img-upload__form');
-const scaleControlValue = uploadForm.querySelector('.scale__control--value');
-const scaleControlSmaller = uploadForm.querySelector('.scale__control--smaller');
-const scaleControlBigger = uploadForm.querySelector('.scale__control--bigger');
-const imagePreview = uploadForm.querySelector('.img-upload__preview img');
-const effectsList = uploadForm.querySelector('.effects__list');
-const effectLevel = uploadForm.querySelector('.img-upload__effect-level');
-const effectLevelValue = uploadForm.querySelector('.effect-level__value');
-const effectLevelSlider = uploadForm.querySelector('.effect-level__slider');
-
-let currentScale = SCALE_DEFAULT;
-let currentEffect = 'none';
-
-// Настройки эффектов
-const effects = {
+const EFFECTS = {
   none: {
+    filter: 'none',
     min: 0,
     max: 100,
     step: 1,
@@ -63,109 +48,166 @@ const effects = {
   },
 };
 
-// Функции для работы с масштабом
-const updateScale = (value) => {
-  currentScale = value;
-  scaleControlValue.value = `${value}%`;
-  imagePreview.style.transform = `scale(${value / 100})`;
+const uploadForm = document.querySelector('.img-upload__form');
+const scaleControlValue = uploadForm.querySelector('.scale__control--value');
+const scaleControlSmaller = uploadForm.querySelector('.scale__control--smaller');
+const scaleControlBigger = uploadForm.querySelector('.scale__control--bigger');
+const imagePreview = uploadForm.querySelector('.img-upload__preview img');
+const effectsList = uploadForm.querySelector('.effects__list');
+const effectLevel = uploadForm.querySelector('.img-upload__effect-level');
+const effectLevelValue = uploadForm.querySelector('.effect-level__value');
+const effectLevelSlider = uploadForm.querySelector('.effect-level__slider');
+
+let currentScale = SCALE_DEFAULT;
+let currentEffect = 'none';
+let slider = null;
+
+const formatNumber = (value) => {
+  const num = parseFloat(value);
+  if (num % 1 === 0) {
+    return num.toString();
+  }
+  return parseFloat(num.toFixed(10)).toString();
+};
+
+const updateScale = (newScale) => {
+  currentScale = newScale;
+  scaleControlValue.value = `${currentScale}%`;
+  imagePreview.style.transform = `scale(${currentScale / 100})`;
 };
 
 const onScaleControlSmallerClick = () => {
-  const newValue = Math.max(currentScale - SCALE_STEP, SCALE_MIN);
-  updateScale(newValue);
+  const newScale = Math.max(currentScale - SCALE_STEP, SCALE_MIN);
+  updateScale(newScale);
 };
 
 const onScaleControlBiggerClick = () => {
-  const newValue = Math.min(currentScale + SCALE_STEP, SCALE_MAX);
-  updateScale(newValue);
+  const newScale = Math.min(currentScale + SCALE_STEP, SCALE_MAX);
+  updateScale(newScale);
 };
 
-// Функции для работы с эффектами
-const createSlider = () => {
-  noUiSlider.create(effectLevelSlider, {
-    range: {
-      min: 0,
-      max: 100,
-    },
-    start: 100,
-    step: 1,
-    connect: 'lower',
-    format: {
-      to: (value) => Number.isInteger(value) ? value : value.toFixed(1),
-      from: (value) => parseFloat(value),
-    },
-  });
+const onSliderUpdate = () => {
+  if (!slider) {
+    return;
+  }
+
+  const value = slider.get();
+  const formattedValue = formatNumber(value);
+  effectLevelValue.value = formattedValue;
+
+  const { filter, unit } = EFFECTS[currentEffect];
+  imagePreview.style.filter = `${filter}(${value}${unit})`;
+};
+
+const hideSlider = () => {
+  effectLevel.classList.add('hidden');
+};
+
+const showSlider = () => {
+  effectLevel.classList.remove('hidden');
 };
 
 const updateSlider = (effect) => {
+  currentEffect = effect;
+
+  imagePreview.className = '';
+
+  if (effect !== 'none') {
+    imagePreview.classList.add(`effects__preview--${effect}`);
+  }
+
+  const effectConfig = EFFECTS[effect];
+
+  if (slider) {
+    slider.destroy();
+    slider = null;
+  }
+
   if (effect === 'none') {
-    effectLevel.classList.add('hidden');
+    hideSlider();
     imagePreview.style.filter = 'none';
     effectLevelValue.value = '';
     return;
   }
 
-  const { min, max, step } = effects[effect];
-  effectLevelSlider.noUiSlider.updateOptions({
-    range: { min, max },
-    start: max,
-    step,
-  });
-
-  effectLevel.classList.remove('hidden');
-};
-
-const onSliderUpdate = () => {
-  if (currentEffect === 'none') {
+  if (typeof noUiSlider === 'undefined') {
+    showSlider();
+    const maxValueFormatted = formatNumber(effectConfig.max);
+    imagePreview.style.filter = `${effectConfig.filter}(${effectConfig.max}${effectConfig.unit})`;
+    effectLevelValue.value = maxValueFormatted;
     return;
   }
 
-  const sliderValue = effectLevelSlider.noUiSlider.get();
-  const { filter, unit } = effects[currentEffect];
+  showSlider();
 
-  effectLevelValue.value = sliderValue;
-  imagePreview.style.filter = `${filter}(${sliderValue}${unit})`;
+  slider = noUiSlider.create(effectLevelSlider, {
+    range: {
+      min: effectConfig.min,
+      max: effectConfig.max
+    },
+    start: effectConfig.max,
+    step: effectConfig.step,
+    connect: 'lower',
+    orientation: 'horizontal',
+    format: {
+      to: function(value) {
+        return formatNumber(value);
+      },
+      from: function(value) {
+        return parseFloat(value);
+      }
+    }
+  });
+
+  slider.on('update', onSliderUpdate);
+
+  const formattedMax = formatNumber(effectConfig.max);
+  imagePreview.style.filter = `${effectConfig.filter}(${effectConfig.max}${effectConfig.unit})`;
+  effectLevelValue.value = formattedMax;
 };
 
 const onEffectsListChange = (evt) => {
-  if (evt.target.type === 'radio') {
-    currentEffect = evt.target.value;
-    updateSlider(currentEffect);
-
-    if (currentEffect !== 'none') {
-      effectLevelSlider.noUiSlider.set(effects[currentEffect].max);
-    }
+  if (evt.target.type === 'radio' && evt.target.name === 'effect') {
+    const effect = evt.target.value;
+    updateSlider(effect);
   }
 };
 
-// Сброс настроек
 const resetImageEditor = () => {
+  currentScale = SCALE_DEFAULT;
   updateScale(SCALE_DEFAULT);
-  currentEffect = 'none';
 
-  // Сбрасываем эффекты
-  effectsList.querySelector('#effect-none').checked = true;
+  currentEffect = 'none';
   imagePreview.style.filter = 'none';
-  effectLevel.classList.add('hidden');
+  imagePreview.className = '';
+
+  const noneEffect = effectsList.querySelector('#effect-none');
+  if (noneEffect) {
+    noneEffect.checked = true;
+  }
+
+  hideSlider();
   effectLevelValue.value = '';
+
+  if (slider) {
+    slider.destroy();
+    slider = null;
+  }
 };
 
-// Инициализация
 const initImageEditor = () => {
-  // Инициализация масштаба
   updateScale(SCALE_DEFAULT);
+
   scaleControlSmaller.addEventListener('click', onScaleControlSmallerClick);
   scaleControlBigger.addEventListener('click', onScaleControlBiggerClick);
-
-  // Инициализация слайдера
-  createSlider();
-  effectLevelSlider.noUiSlider.on('update', onSliderUpdate);
-
-  // Инициализация эффектов
   effectsList.addEventListener('change', onEffectsListChange);
 
-  // Скрываем слайдер по умолчанию
-  effectLevel.classList.add('hidden');
+  hideSlider();
+
+  const noneEffect = effectsList.querySelector('#effect-none');
+  if (noneEffect) {
+    noneEffect.checked = true;
+  }
 };
 
-export { initImageEditor, resetImageEditor };
+export { initImageEditor, resetImageEditor, updateScale };

@@ -1,16 +1,16 @@
 import { getData } from './api.js';
+import { initFilters } from './filters.js';
 import { openFullPhoto } from './full-photo.js';
 
 const picturesContainer = document.querySelector('.pictures');
 const pictureTemplate = document.querySelector('#picture').content.querySelector('.picture');
+const filtersContainer = document.querySelector('.img-filters');
 
 let photos = [];
 
-// Функция для отрисовки миниатюр (теперь принимает данные как параметр)
 const renderThumbnails = (data = photos) => {
   const fragment = document.createDocumentFragment();
 
-  // Очищаем контейнер
   const existingThumbnails = picturesContainer.querySelectorAll('.picture');
   existingThumbnails.forEach((thumbnail) => thumbnail.remove());
 
@@ -25,7 +25,8 @@ const renderThumbnails = (data = photos) => {
     likes.textContent = photo.likes;
     comments.textContent = photo.comments.length;
 
-    // Добавляем обработчик клика на миниатюру
+    thumbnail.dataset.id = photo.id;
+
     thumbnail.addEventListener('click', (evt) => {
       evt.preventDefault();
       openFullPhoto(photo);
@@ -37,36 +38,29 @@ const renderThumbnails = (data = photos) => {
   picturesContainer.appendChild(fragment);
 };
 
-// Функция для загрузки и отрисовки данных
-const loadAndRenderThumbnails = () => {
-  getData()
-    .then((data) => {
-      photos = data;
-      renderThumbnails(photos);
-    })
-    .catch((error) => {
-      // Показываем сообщение об ошибке
-      const errorMessage = document.createElement('div');
-      errorMessage.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #ff4d4d;
-        color: white;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        z-index: 1000;
-      `;
-      errorMessage.textContent = error.message;
-      document.body.appendChild(errorMessage);
+const loadAndRenderThumbnails = () => getData()
+  .then((data) => {
+    photos = data;
+    renderThumbnails(photos);
 
-      // Убираем сообщение через 5 секунд
-      setTimeout(() => {
-        errorMessage.remove();
-      }, 5000);
-    });
-};
+    if (filtersContainer) {
+      filtersContainer.classList.remove('img-filters--inactive');
+
+      const defaultButton = filtersContainer.querySelector('#filter-default');
+      if (defaultButton) {
+        defaultButton.classList.add('img-filters__button--active');
+      }
+    }
+
+    initFilters(photos);
+
+    return data;
+  })
+  .catch(() => {
+    if (filtersContainer) {
+      filtersContainer.classList.add('img-filters--inactive');
+    }
+    throw new Error('Failed to load photos');
+  });
 
 export { loadAndRenderThumbnails, photos, renderThumbnails };

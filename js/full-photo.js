@@ -1,3 +1,5 @@
+import { isEscapeKey } from './util.js';
+
 const body = document.querySelector('body');
 const bigPicture = document.querySelector('.big-picture');
 const bigPictureImg = bigPicture.querySelector('.big-picture__img img');
@@ -13,7 +15,6 @@ const COMMENTS_PER_PORTION = 5;
 let currentComments = [];
 let commentsShown = 0;
 
-// Функция для создания одного комментария
 const createComment = (comment) => {
   const commentElement = document.createElement('li');
   commentElement.classList.add('social__comment');
@@ -26,7 +27,6 @@ const createComment = (comment) => {
   return commentElement;
 };
 
-// Функция для отрисовки комментариев порциями
 const renderComments = () => {
   const commentsPortion = currentComments.slice(commentsShown, commentsShown + COMMENTS_PER_PORTION);
   const fragment = document.createDocumentFragment();
@@ -38,11 +38,17 @@ const renderComments = () => {
 
   socialComments.appendChild(fragment);
 
-  // Обновляем счетчик показанных комментариев
   commentsShown += commentsPortion.length;
-  commentCountBlock.innerHTML = `${commentsShown} из <span class="comments-count">${currentComments.length}</span> комментариев`;
 
-  // Скрываем кнопку, если все комментарии показаны
+  commentCountBlock.innerHTML = `
+    <span class="social__comment-shown-count">${commentsShown}</span> из 
+    <span class="social__comment-total-count">${currentComments.length}</span> комментариев
+  `;
+
+  if (commentsCount) {
+    commentsCount.textContent = currentComments.length;
+  }
+
   if (commentsShown >= currentComments.length) {
     commentsLoader.classList.add('hidden');
   } else {
@@ -50,57 +56,54 @@ const renderComments = () => {
   }
 };
 
-// Обработчик кнопки "Загрузить ещё"
 const onCommentsLoaderClick = () => {
   renderComments();
 };
 
-// Функция закрытия полноразмерного фото
 const closeFullPhoto = () => {
   bigPicture.classList.add('hidden');
   body.classList.remove('modal-open');
   document.removeEventListener('keydown', onDocumentKeydown);
   commentsLoader.removeEventListener('click', onCommentsLoaderClick);
 
-  // Сбрасываем состояние
   currentComments = [];
   commentsShown = 0;
 };
 
-// Обработчик клавиши Esc
 function onDocumentKeydown(evt) {
-  if (evt.key === 'Escape') {
+  if (isEscapeKey(evt)) {
     evt.preventDefault();
     closeFullPhoto();
   }
 }
 
-// Функция открытия полноразмерного фото
 const openFullPhoto = (photoData) => {
-  // Заполняем данные
   bigPictureImg.src = photoData.url;
   bigPictureImg.alt = photoData.description;
-  likesCount.textContent = photoData.likes;
-  commentsCount.textContent = photoData.comments.length;
+
+  if (likesCount) {
+    likesCount.textContent = photoData.likes;
+  }
+
+  if (commentsCount) {
+    commentsCount.textContent = photoData.comments.length;
+  }
+
   socialCaption.textContent = photoData.description;
 
-  // Сохраняем комментарии и сбрасываем счетчик
   currentComments = photoData.comments;
   commentsShown = 0;
   socialComments.innerHTML = '';
 
-  // Показываем блоки с комментариями (убираем hidden)
   commentCountBlock.classList.remove('hidden');
+
   commentsLoader.classList.remove('hidden');
 
-  // Отрисовываем первую порцию комментариев
   renderComments();
 
-  // Показываем окно
   bigPicture.classList.remove('hidden');
   body.classList.add('modal-open');
 
-  // Добавляем обработчики
   document.addEventListener('keydown', onDocumentKeydown);
   closeButton.addEventListener('click', closeFullPhoto);
   commentsLoader.addEventListener('click', onCommentsLoaderClick);

@@ -120,65 +120,38 @@ main {
 /* Блок с фильтрами изображений других пользователей
    ========================================================================== */
 
+/* Блок с фильтрами изображений других пользователей */
 .img-filters {
   padding: 20px 0;
-
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-
-  -webkit-box-pack: center;
-     -ms-flex-pack: center;
-   justify-content: center;
+  justify-content: center;
 }
 
 .img-filters--inactive {
-  opacity: 0;
+  display: none !important;
+}
+
+.img-filters__form {
+  display: flex;
+  gap: 10px;
 }
 
 .img-filters__button {
   padding: 5px 15px;
-
   font-family: "Open Sans", "Arial", sans-serif;
   font-weight: 700;
   font-size: 18px;
-  line-height: auto;
   text-transform: uppercase;
-
   cursor: pointer;
   background-color: #232321;
   border: none;
+  color: white;
 }
 
-.img-filters__button:active,
 .img-filters__button--active {
-  color: #ff4e4e;
-
-  background-color: #ffffff;
-  border-radius: 2px;
-}
-
-.img-filters__label {
-  padding: 5px 15px;
-
-  font-family: "Open Sans", "Arial", sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: auto;
-
-  cursor: pointer;
-}
-
-.img-filters__radio:focus + .img-filters__label {
-  outline: auto 5px highlight;
-}
-
-.img-filters__radio:checked + .img-filters__label {
-  color: #ff4e4e;
-  text-decoration: none;
-
-  background-color: #ffffff;
-  border-radius: 2px;
+  color: #ff4e4e !important;
+  background-color: #ffffff !important;
+  border-radius: 2px !important;
 }
 
 
@@ -529,30 +502,97 @@ main {
 
 .effect-level {
   position: absolute;
-  bottom: 10px;
+  bottom: 9px;
   left: 50%;
 
+  padding: 7px 11px 0;
+
   width: 495px;
-  height: 33px;
+  height: 34px;
 
   font-size: 12px;
-  line-height: 42px;
   text-align: center;
   color: #ffffff;
   white-space: nowrap;
 
   background-color: rgba(0, 0, 0, 0.6);
-  border-radius: 33px;
+  border-radius: 34px;
 
   -webkit-transform: translateX(-50%);
       -ms-transform: translateX(-50%);
           transform: translateX(-50%);
 }
 
+.effect-level .noUi-target {
+  border-radius: 16px;
+}
+
+.effect-level .noUi-connects {
+  border-radius: 13px;
+}
+
+.effect-level .noUi-connect {
+  background: #ffe753;
+}
+
 .effect-level__value {
   display: none;
 }
 
+/* Стили для noUiSlider */
+.effect-level__slider {
+  width: 100%;
+  height: 20px;
+  margin: 6px 0;
+}
+
+.noUi-target {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  border: none;
+  box-shadow: none;
+  height: 20px;
+}
+
+.noUi-base {
+  width: 100%;
+  height: 100%;
+}
+
+.noUi-connects {
+  border-radius: 13px;
+  height: 100%;
+}
+
+.noUi-connect {
+  background: #ffe753;
+  height: 100%;
+}
+
+.noUi-handle {
+  width: 20px !important;
+  height: 20px !important;
+  right: -10px !important;
+  top: 0 !important;
+  border-radius: 50%;
+  background: #ffe753;
+  border: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.noUi-handle:focus {
+  outline: none;
+}
+
+.noUi-handle::before,
+.noUi-handle::after {
+  display: none !important;
+}
+
+.effect-level.hidden {
+  display: none;
+}
 
 /**
  * Блок с эффектами, которые можно применить к изображению
@@ -698,6 +738,45 @@ main {
 }
 
 
+/* Стили для ошибок валидации */
+.img-upload__field-wrapper {
+  position: relative;
+  margin-bottom: 25px; /* Место для ошибки */
+}
+
+.pristine-error {
+  display: block !important;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+  padding: 5px 10px;
+  background-color: #ff4d4d;
+  color: white;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 10;
+  white-space: nowrap;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.pristine-error::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 10px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #ff4d4d transparent;
+}
+
+.img-upload__field-wrapper--invalid .pristine-error {
+  display: block !important;
+  visibility: visible !important;
+}
+
+
 /**
  * Кнопка для отправки изображения
  */
@@ -733,6 +812,12 @@ main {
   opacity: 0.3;
 }
 
+.img-upload__error {
+  display: block;
+  font-size: 0.85em;
+  color: rgb(238, 23, 23);
+  margin: -5px 0px 0px 0px;
+}
 
 /*
  * Кнопка для закрытия окна редактирования изображения
@@ -908,6 +993,11 @@ main {
 .social__comment-count {
   padding-top: 20px;
   padding-left: 65px;
+}
+
+/* Добавляем стили для элементов счетчика */
+.social__comment-shown-count {
+  font-weight: bold;
 }
 
 .social__comments-loader {
@@ -1190,13 +1280,11 @@ main {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-
   left: 0;
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 1;
-
+  z-index: 1000 !important;
   background-color: rgba(0, 0, 0, 0.8);
 }
 
@@ -1207,25 +1295,32 @@ main {
   padding: 50px 20px;
   padding-top: 150px;
   margin-top: 200px;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
   font-family: "Open Sans", "Arial", sans-serif;
   text-align: center;
   font-weight: 700;
   font-size: 20px;
   color: #ffe753;
-
   background-color: #3c3614;
   border-radius: 10px;
+  z-index: 1001 !important;
 }
 
-.success__inner {
-  padding: 100px 20px;
-  padding-bottom: 75px;
+/* Форма ниже сообщений */
+.img-upload__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20 !important;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding-top: 60px;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .error__title {
@@ -1394,4 +1489,21 @@ main {
 
 .hidden {
   display: none;
+}
+
+/* Дополнительные гарантированные стили для фильтров */
+.img-filters__form {
+  display: flex !important;
+  gap: 10px;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Убираем наследование скрытия от родителя */
+.img-filters:not(.img-filters--inactive) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  padding: 20px 0 !important;
 }
